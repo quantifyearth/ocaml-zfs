@@ -11,10 +11,16 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let init = foreign "libzfs_init" (void @-> returning Types.libzfs_handle_t)
   let errno = foreign "libzfs_errno" (Types.libzfs_handle_t @-> returning int)
 
+  let debug =
+    foreign "libzfs_print_on_error"
+      (Types.libzfs_handle_t @-> bool @-> returning void)
+
   module Zpool = struct
     let open_ =
       foreign "zpool_open"
         (Types.libzfs_handle_t @-> string @-> returning Types.zpool_handle_t)
+
+    let close = foreign "zpool_close" (Types.zpool_handle_t @-> returning void)
 
     let get_name =
       foreign "zpool_get_name" (Types.zpool_handle_t @-> returning string)
@@ -22,6 +28,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
     let get_state =
       foreign "zpool_get_state" (Types.zpool_handle_t @-> returning int)
   end
+
+  let create_ancestors =
+    foreign "zfs_create_ancestors"
+      (Types.libzfs_handle_t @-> string @-> returning int)
 
   let create =
     foreign "zfs_create"
@@ -31,6 +41,13 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let open_ =
     foreign "zfs_open"
       (Types.libzfs_handle_t @-> string @-> int @-> returning Types.zfs_handle_t)
+
+  let mount =
+    foreign "zfs_mount" (Types.zfs_handle_t @-> string @-> int @-> returning int)
+
+  let unmount =
+    foreign "zfs_unmount"
+      (Types.zfs_handle_t @-> string @-> int @-> returning int)
 
   let close = foreign "zfs_close" (Types.zfs_handle_t @-> returning void)
   let get_type = foreign "zfs_get_type" (Types.zfs_handle_t @-> returning int)
@@ -58,4 +75,26 @@ module Functions (F : Ctypes.FOREIGN) = struct
       foreign "nvlist_add_int64"
         (ptr Types.nvlist_t @-> string @-> int64_t @-> returning int)
   end
+
+  let clone =
+    foreign "zfs_clone"
+      (Types.zfs_handle_t @-> string @-> ptr Types.nvlist_t @-> returning int)
+
+  let snapshot =
+    foreign "zfs_snapshot"
+      (Types.libzfs_handle_t @-> string @-> bool @-> ptr Types.nvlist_t
+     @-> returning int)
+
+  let exists =
+    foreign "zfs_dataset_exists"
+      (Types.libzfs_handle_t @-> string @-> int @-> returning bool)
+
+  let is_mounted =
+    foreign "is_mounted"
+      (Types.libzfs_handle_t @-> string @-> ptr string @-> returning bool)
+
+  let diff =
+    foreign "zfs_show_diffs"
+      (Types.zfs_handle_t @-> int @-> string @-> string_opt @-> int
+     @-> returning int)
 end

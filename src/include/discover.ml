@@ -154,6 +154,7 @@ let () =
                   ("ZFS_TYPE_POOL", Int);
                   ("ZFS_TYPE_BOOKMARK", Int);
                   ("ZFS_TYPE_VDEV", Int);
+                  ("ZFS_TYPE_DATASET", Int);
                 ]
             |> List.fold_left
                  (fun (errs, props, types) -> function

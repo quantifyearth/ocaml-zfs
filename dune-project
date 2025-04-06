@@ -7,22 +7,25 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github patricoferris/ocaml-zfs))
 
-(authors "Author Name")
+(authors "Patrick Ferris <patrick@sirref.org>")
 
-(maintainers "Maintainer Name")
+(maintainers "Patrick Ferris <patrick@sirref.org>")
 
-(license LICENSE)
+(license ISC)
 
-(documentation https://url/to/documentation)
 
 (package
  (name zfs)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune)
+ (synopsis "libzfs bindings")
+ (description "OCaml bindings to libzfs")
+ (depends 
+   ocaml 
+   dune
+   ctypes
+   (mdx :with-test))
  (tags
-  (topics "to describe" your project)))
+  ("filesystem" "zfs")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project

@@ -12,6 +12,7 @@ module Types : sig
   val bookmark : t
   val snapshot : t
   val filesystem : t
+  val dataset : t
 end
 
 module Handle : sig
@@ -22,6 +23,9 @@ end
 val init : unit -> Handle.t
 (** Initialise the library *)
 
+val debug : Handle.t -> bool -> unit
+(** Enable/disable printing on error from ZFS *)
+
 val errno : Handle.t -> int
 (** Check for errors on the handle *)
 
@@ -31,6 +35,9 @@ module Zpool : sig
 
   val open_ : Handle.t -> string -> t
   (** Open a Zpool *)
+
+  val close : t -> unit
+  (** Close an open Zpool *)
 
   val get_name : t -> string
   (** The name of an open Zpool *)
@@ -56,6 +63,9 @@ end
 type t
 (** A ZFS Dataset *)
 
+val create_ancestors : Handle.t -> string -> unit
+(** Often called before {! create} *)
+
 val create : ?props:Nvlist.nvlist -> Handle.t -> string -> Types.t -> unit
 (** Create a new ZFS dataset *)
 
@@ -65,8 +75,30 @@ val open_ : Handle.t -> string -> Types.t -> t
 val close : t -> unit
 (** Close a dataset *)
 
+val exists : Handle.t -> string -> Types.t -> bool
+(** Check if a dataset of a specific type exists *)
+
+val is_mounted : Handle.t -> string -> string option
+(** [is_mounted h d = None] if [d] is not mounted, otherwise
+    [is_mounted h d = Some mountpoint]. *)
+
+val mount : ?mount_opts:string -> ?mount_flags:int -> t -> unit
+(** Mount a dataset *)
+
+val unmount : ?mount_opts:string -> ?mount_flags:int -> t -> unit
+(** Unmount a dataset *)
+
 val get_type : t -> Types.t
 (** Get the type of the dataset *)
+
+val clone : ?options:Nvlist.t -> t -> string -> unit
+(** Clone an open dataset *)
+
+val snapshot : ?options:Nvlist.t -> Handle.t -> string -> bool -> unit
+(** Snapshot a dataset *)
+
+val show_diff : ?to_:string -> t -> from_:string -> Unix.file_descr -> unit
+(** Output diff to the file descriptor *)
 
 module Error : sig
   type t = int

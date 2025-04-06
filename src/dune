@@ -6,6 +6,7 @@
 (library
  (name zfs)
  (public_name zfs)
+ (libraries unix)
  (c_library_flags
   (:include c_library_flags.sexp))
  (flags
