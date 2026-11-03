@@ -1,5 +1,23 @@
 module Error = struct
-  include Config.Error
+  include Config.Errors
+
+  exception Zfs_error of (kind * string)
+
+  let raise ?(msg = "") handle res =
+    if res = 0 then ()
+    else
+      let err_msg = C.Functions.err_description handle in
+      let msg = if err_msg = "" then msg else err_msg in
+      let n = C.Functions.errno handle in
+      raise (Zfs_error (kind_of_int n, msg))
+
+  let () =
+    Printexc.register_printer (function
+      | Zfs_error (k, "") ->
+          Some (Printf.sprintf "Zfs_error(%s)" (kind_to_string k))
+      | Zfs_error (k, msg) ->
+          Some (Printf.sprintf "Zfs_error(%s, \"%s\")" (kind_to_string k) msg)
+      | _ -> None)
 end
 
 module Flags = struct
@@ -88,11 +106,11 @@ type t = C.Types.zfs_handle_t Ctypes_static.structure Ctypes_static.ptr
 
 let create_ancestors handle path =
   let i = C.Functions.create_ancestors handle path in
-  if i != 0 then failwith "Failed to create ancestors" else ()
+  Error.raise ~msg:"create_ancestors" handle i
 
 let create ?(props = []) handle path (type_ : Types.t) =
   let i = C.Functions.create handle path type_ (Nvlist.v props) in
-  if i != 0 then failwith "Failed to create" else ()
+  Error.raise ~msg:"create" handle i
 
 let open_ handle path (type_ : Types.t) = C.Functions.open_ handle path type_
 let close : t -> unit = C.Functions.close
@@ -100,11 +118,11 @@ let get_type : t -> Types.t = C.Functions.get_type
 
 let clone ?(options = Nvlist.empty) handle path =
   let res = C.Functions.clone handle path options in
-  if res = 0 then () else invalid_arg "clone"
+  Error.raise ~msg:"clone" (C.Functions.get_handle handle) res
 
 let snapshot ?(options = Nvlist.empty) handle path b =
   let res = C.Functions.snapshot handle path b options in
-  if res = 0 then () else invalid_arg "snapshot"
+  Error.raise ~msg:"snapshot" handle res
 
 let exists handle path (type_ : Types.t) = C.Functions.exists handle path type_
 
@@ -129,7 +147,7 @@ let mount ?mount_opts ?(mount_flags = 0) dataset =
       mount_opts
   in
   let res = C.Functions.mount dataset opts mount_flags in
-  if res <> 0 then invalid_arg "mounting dataset"
+  Error.raise ~msg:"mount" (C.Functions.get_handle dataset) res
 
 let unmount ?mount_opts ?(mount_flags = 0) dataset =
   let opts =
@@ -138,12 +156,9 @@ let unmount ?mount_opts ?(mount_flags = 0) dataset =
       mount_opts
   in
   let res = C.Functions.unmount dataset opts mount_flags in
-  if res <> 0 then invalid_arg "unmounting dataset"
+  Error.raise ~msg:"unmount" (C.Functions.get_handle dataset) res
 
 let show_diff ?to_ handle ~from_ (fd : Unix.file_descr) =
   (* TODO: Other Diff Flags https://github.com/openzfs/zfs/blob/5b0c27cd14bbc07d50304c97735cc105d0258673/include/libzfs.h#L917? *)
   let res = C.Functions.diff handle (Obj.magic fd : int) from_ to_ 1 in
-  if res = 0 then ()
-  else (
-    Format.printf "Diff got %i\n%!" res;
-    invalid_arg "show_diff")
+  Error.raise ~msg:"show_diff" (C.Functions.get_handle handle) res

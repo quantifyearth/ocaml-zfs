@@ -103,106 +103,108 @@ val show_diff : ?to_:string -> t -> from_:string -> Unix.file_descr -> unit
 (** Output diff to the file descriptor *)
 
 module Error : sig
-  type t = int
+  type kind =
+    | Unknown
+    | Sharefailed
+    | Resume_exists
+    | Cksum
+    | Not_user_namespace
+    | Vdev_notsup
+    | Rebuilding
+    | Export_in_progress
+    | No_resilver_defer
+    | Trim_notsup
+    | No_trim
+    | Trimming
+    | Wrong_parent
+    | No_initialize
+    | Initializing
+    | Toomany
+    | Ioc_notsupported
+    | Vdev_too_big
+    | Devrm_in_progress
+    | No_checkpoint
+    | Discarding_checkpoint
+    | Checkpoint_exists
+    | No_pending
+    | Cryptofailed
+    | Active_pool
+    | Scrub_paused_to_cancel
+    | Scrub_paused
+    | Poolreadonly
+    | Diffdata
+    | Diff
+    | No_scrub
+    | Errorscrub_paused
+    | Errorscrubbing
+    | Scrubbing
+    | Postsplit_online
+    | Threadcreatefailed
+    | Pipefailed
+    | Tagtoolong
+    | Reftag_hold
+    | Reftag_rele
+    | Unplayed_logs
+    | Active_spare
+    | Notsup
+    | Vdevnotsup
+    | Isl2cache
+    | Badcache
+    | Sharesmbfailed
+    | Unsharesmbfailed
+    | Nodelegation
+    | Badpermset
+    | Badperm
+    | Badwho
+    | Labelfailed
+    | Nocap
+    | Openfailed
+    | Nametoolong
+    | Pool_invalarg
+    | Pool_notsup
+    | Poolprops
+    | Nohistory
+    | Recursive
+    | Invalconfig
+    | Isspare
+    | Intr
+    | Io
+    | Fault
+    | Nospc
+    | Perm
+    | Sharenfsfailed
+    | Unsharenfsfailed
+    | Umountfailed
+    | Mountfailed
+    | Zoned
+    | Crosstarget
+    | Badpath
+    | Devoverflow
+    | Poolunavail
+    | Badversion
+    | Resilvering
+    | Noreplicas
+    | Baddev
+    | Nodevice
+    | Badtarget
+    | Badbackup
+    | Badrestore
+    | Invalidname
+    | Voltoobig
+    | Dsreadonly
+    | Badstream
+    | Noent
+    | Exists
+    | Busy
+    | Badtype
+    | Propspace
+    | Propnoninherit
+    | Proptype
+    | Propreadonly
+    | Badprop
+    | Nomem
+    | Success
+    | Unrecognised of int
 
-  val unknown : t
-  val sharefailed : t
-  val resume_exists : t
-  val cksum : t
-  val not_user_namespace : t
-  val vdev_notsup : t
-  val rebuilding : t
-  val export_in_progress : t
-  val no_resilver_defer : t
-  val trim_notsup : t
-  val no_trim : t
-  val trimming : t
-  val wrong_parent : t
-  val no_initialize : t
-  val initializing : t
-  val toomany : t
-  val ioc_notsupported : t
-  val vdev_too_big : t
-  val devrm_in_progress : t
-  val no_checkpoint : t
-  val discarding_checkpoint : t
-  val checkpoint_exists : t
-  val no_pending : t
-  val cryptofailed : t
-  val active_pool : t
-  val scrub_paused_to_cancel : t
-  val scrub_paused : t
-  val poolreadonly : t
-  val diffdata : t
-  val diff : t
-  val no_scrub : t
-  val errorscrub_paused : t
-  val errorscrubbing : t
-  val scrubbing : t
-  val postsplit_online : t
-  val threadcreatefailed : t
-  val pipefailed : t
-  val tagtoolong : t
-  val reftag_hold : t
-  val reftag_rele : t
-  val unplayed_logs : t
-  val active_spare : t
-  val notsup : t
-  val vdevnotsup : t
-  val isl2cache : t
-  val badcache : t
-  val sharesmbfailed : t
-  val unsharesmbfailed : t
-  val nodelegation : t
-  val badpermset : t
-  val badperm : t
-  val badwho : t
-  val labelfailed : t
-  val nocap : t
-  val openfailed : t
-  val nametoolong : t
-  val pool_invalarg : t
-  val pool_notsup : t
-  val poolprops : t
-  val nohistory : t
-  val recursive : t
-  val invalconfig : t
-  val isspare : t
-  val intr : t
-  val io : t
-  val fault : t
-  val nospc : t
-  val perm : t
-  val sharenfsfailed : t
-  val unsharenfsfailed : t
-  val umountfailed : t
-  val mountfailed : t
-  val zoned : t
-  val crosstarget : t
-  val badpath : t
-  val devoverflow : t
-  val poolunavail : t
-  val badversion : t
-  val resilvering : t
-  val noreplicas : t
-  val baddev : t
-  val nodevice : t
-  val badtarget : t
-  val badbackup : t
-  val badrestore : t
-  val invalidname : t
-  val voltoobig : t
-  val dsreadonly : t
-  val badstream : t
-  val noent : t
-  val exists : t
-  val busy : t
-  val badtype : t
-  val propspace : t
-  val propnoninherit : t
-  val proptype : t
-  val propreadonly : t
-  val badprop : t
-  val nomem : t
-  val success : t
+  exception Zfs_error of (kind * string)
 end

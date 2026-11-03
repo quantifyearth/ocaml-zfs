@@ -11,6 +11,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
   let init = foreign "libzfs_init" (void @-> returning Types.libzfs_handle_t)
   let errno = foreign "libzfs_errno" (Types.libzfs_handle_t @-> returning int)
 
+  let err_description =
+    foreign "libzfs_error_description"
+      (Types.libzfs_handle_t @-> returning string)
+
   let debug =
     foreign "libzfs_print_on_error"
       (Types.libzfs_handle_t @-> bool @-> returning void)
@@ -28,6 +32,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
     let get_state =
       foreign "zpool_get_state" (Types.zpool_handle_t @-> returning int)
   end
+
+  let get_handle =
+    foreign "zfs_get_handle"
+      (Types.zfs_handle_t @-> returning Types.libzfs_handle_t)
 
   let create_ancestors =
     foreign "zfs_create_ancestors"

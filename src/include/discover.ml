@@ -170,7 +170,9 @@ let () =
                        in
                        match starts_with ~prefix:"EZFS_" name with
                        | Some r ->
-                           ((type_ r, definition r) :: errs, props, types)
+                           ( (type_ r, definition r, name, v) :: errs,
+                             props,
+                             types )
                        | None -> (
                            match starts_with ~prefix:"ZFS_PROP_" name with
                            | Some r ->
@@ -196,13 +198,52 @@ let () =
             ]
             @ defs @ [ "end" ]
           in
+          let err_name_to_ocaml s =
+            let len = String.length s in
+            let s = String.sub s 5 (len - 5) in
+            let s = String.lowercase_ascii s in
+            String.capitalize_ascii s
+          in
+          let ocaml_errors =
+            let type_t =
+              Printf.sprintf "type kind = %s | Unrecognised of int "
+                (String.concat ""
+                   (List.map
+                      (fun (_, _, name, _) -> "| " ^ err_name_to_ocaml name)
+                      errs))
+            in
+            let kind_of_int =
+              Printf.sprintf
+                "let kind_of_int = function %s\n | n -> Unrecognised n"
+                (String.concat "\n"
+                   (List.map
+                      (fun (_, _, name, v) ->
+                        "| " ^ string_of_int v ^ " -> " ^ err_name_to_ocaml name)
+                      errs))
+            in
+            let kind_to_string =
+              Printf.sprintf
+                "let kind_to_string = function %s\n\
+                \ | Unrecognised n -> \"Unrecognised \" ^ string_of_int n\n"
+                (String.concat "\n"
+                   (List.map
+                      (fun (_, _, name, _) ->
+                        "| " ^ err_name_to_ocaml name ^ " -> \""
+                        ^ err_name_to_ocaml name ^ "\"")
+                      errs))
+            in
+            Printf.sprintf "module Errors = struct %s\n %s\n %s\nend" type_t
+              kind_of_int kind_to_string
+          in
           let defs =
-            with_module ~name:"Error" (List.map snd errs)
+            with_module ~name:"Error" (List.map (fun (_, v, _, _) -> v) errs)
             @ with_module ~name:"Props" (List.map snd props)
             @ with_module ~name:"Types" (List.map snd types)
+            @ [ ocaml_errors ]
           in
           let types =
-            with_module_type ~name:"ERROR" (List.map fst errs)
+            with_module_type ~name:"ERROR"
+              (List.map (fun (v, _, _, _) -> v) errs)
             @ with_module_type ~name:"PROPS" (List.map fst props)
             @ with_module_type ~name:"TYPES" (List.map fst types)
           in
