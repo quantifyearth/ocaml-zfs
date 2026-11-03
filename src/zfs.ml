@@ -109,9 +109,11 @@ let snapshot ?(options = Nvlist.empty) handle path b =
 let exists handle path (type_ : Types.t) = C.Functions.exists handle path type_
 
 let is_mounted handle path =
-  let where = Ctypes.allocate Ctypes.string "" in
+  let where = Ctypes.allocate Ctypes.(ptr char) Ctypes.(coerce (ptr void) (ptr char) Ctypes.null) in
   let v = C.Functions.is_mounted handle path where in
-  if not v then None else Some (Ctypes.( !@ ) where)
+  if not v then None else 
+    let c = Ctypes.( !@ ) where in
+    Some Ctypes.(coerce (ptr char) string c)
 
 let null_string = Ctypes.(coerce (ptr void) (ptr char) null)
 

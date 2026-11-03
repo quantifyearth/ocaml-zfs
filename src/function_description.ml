@@ -91,7 +91,7 @@ module Functions (F : Ctypes.FOREIGN) = struct
 
   let is_mounted =
     foreign "is_mounted"
-      (Types.libzfs_handle_t @-> string @-> ptr string @-> returning bool)
+      (Types.libzfs_handle_t @-> string @-> ptr (ptr char) @-> returning bool)
 
   let diff =
     foreign "zfs_show_diffs"
