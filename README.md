@@ -1,7 +1,7 @@
 ocaml-zfs
 ---------
 
-Some very partial and very probably broken bindings to `libzfs`.
+OCaml bindings to `libzfs`. 
 
 <!-- $MDX file=example/main.ml -->
 ```ocaml

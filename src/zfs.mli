@@ -1,3 +1,5 @@
+(** {! Zfs} *)
+
 module Types : sig
   type t = private int
 
