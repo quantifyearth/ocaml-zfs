@@ -1,6 +1,6 @@
 (** {! Zfs} *)
 
-module Types : sig
+module Type : sig
   type t = private int
 
   val empty : int
@@ -66,18 +66,23 @@ type t
 (** A ZFS Dataset *)
 
 val create_ancestors : Handle.t -> string -> unit
-(** Often called before {! create} *)
+(** Often called before {! create}, acts similarly to [mkdir -p]. *)
 
-val create : ?props:Nvlist.nvlist -> Handle.t -> string -> Types.t -> unit
-(** Create a new ZFS dataset *)
+val create : ?props:Nvlist.nvlist -> Handle.t -> string -> Type.t -> unit
+(** Create a new ZFS dataset. *)
 
-val open_ : Handle.t -> string -> Types.t -> t
-(** Open an existing ZFS dataset *)
+val open_ : Handle.t -> string -> Type.t -> t
+(** Open an existing ZFS dataset. *)
 
 val close : t -> unit
-(** Close a dataset *)
+(** Close a dataset. *)
 
-val exists : Handle.t -> string -> Types.t -> bool
+val destroy : ?defer:bool -> t -> unit
+(** [destroy ~defer d] destroys the dataset [d]. By default the dataset is not
+    deferred for destruction, but a user can request that the kernel destroy the
+    dataset when the last reference to it is released. *)
+
+val exists : Handle.t -> string -> Type.t -> bool
 (** Check if a dataset of a specific type exists *)
 
 val is_mounted : Handle.t -> string -> string option
@@ -90,7 +95,7 @@ val mount : ?mount_opts:string -> ?mount_flags:int -> t -> unit
 val unmount : ?mount_opts:string -> ?mount_flags:int -> t -> unit
 (** Unmount a dataset *)
 
-val get_type : t -> Types.t
+val get_type : t -> Type.t
 (** Get the type of the dataset *)
 
 val clone : ?options:Nvlist.t -> t -> string -> unit

@@ -46,6 +46,9 @@ module Functions (F : Ctypes.FOREIGN) = struct
       (Types.libzfs_handle_t @-> string @-> int @-> ptr Types.nvlist_t
      @-> returning int)
 
+  let destroy =
+    foreign "zfs_destroy" (Types.zfs_handle_t @-> bool @-> returning int)
+
   let open_ =
     foreign "zfs_open"
       (Types.libzfs_handle_t @-> string @-> int @-> returning Types.zfs_handle_t)

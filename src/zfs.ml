@@ -29,7 +29,7 @@ module Flags = struct
   let mem a b = a land b = a
 end
 
-module Types = struct
+module Type = struct
   include Flags
 
   let vdev = Config.Types.vdev
@@ -108,13 +108,17 @@ let create_ancestors handle path =
   let i = C.Functions.create_ancestors handle path in
   Error.raise ~msg:"create_ancestors" handle i
 
-let create ?(props = []) handle path (type_ : Types.t) =
+let create ?(props = []) handle path (type_ : Type.t) =
   let i = C.Functions.create handle path type_ (Nvlist.v props) in
   Error.raise ~msg:"create" handle i
 
-let open_ handle path (type_ : Types.t) = C.Functions.open_ handle path type_
+let destroy ?(defer = false) dataset =
+  let i = C.Functions.destroy dataset defer in
+  Error.raise ~msg:"destroy" (C.Functions.get_handle dataset) i
+
+let open_ handle path (type_ : Type.t) = C.Functions.open_ handle path type_
 let close : t -> unit = C.Functions.close
-let get_type : t -> Types.t = C.Functions.get_type
+let get_type : t -> Type.t = C.Functions.get_type
 
 let clone ?(options = Nvlist.empty) handle path =
   let res = C.Functions.clone handle path options in
@@ -124,7 +128,7 @@ let snapshot ?(options = Nvlist.empty) handle path b =
   let res = C.Functions.snapshot handle path b options in
   Error.raise ~msg:"snapshot" handle res
 
-let exists handle path (type_ : Types.t) = C.Functions.exists handle path type_
+let exists handle path (type_ : Type.t) = C.Functions.exists handle path type_
 
 let is_mounted handle path =
   let where =
