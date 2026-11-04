@@ -65,10 +65,13 @@ module Zpool : sig
       pool called [pool_name]. *)
 
   val open_ : Handle.t -> string -> t
-  (** Open a Zpool *)
+  (** Open a pool. *)
 
   val close : t -> unit
-  (** Close an open Zpool *)
+  (** Close an open pool. *)
+
+  val exists : Handle.t -> string -> bool
+  (** Check if a pool exists. *)
 
   val get_name : t -> string
   (** The name of an open Zpool *)

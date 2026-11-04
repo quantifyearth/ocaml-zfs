@@ -21,4 +21,5 @@ let () =
   let handle = Zfs.init () in
   let pwd = Unix.getcwd () in
   setup_pool handle (Filename.concat pwd "disk");
+  assert (Zfs.Zpool.exists handle pool_name);
   Zfs.create handle (Filename.concat pool_name "dataset") Zfs.Type.filesystem

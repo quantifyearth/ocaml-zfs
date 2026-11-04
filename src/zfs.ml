@@ -127,6 +127,8 @@ end
 module Zpool = struct
   type t = C.Types.zpool_handle_t Ctypes_static.structure Ctypes_static.ptr
 
+  let open_ = C.Functions.Zpool.open_
+
   let create ?(vdev = []) ?(props = []) ?(fs_props = []) handle pool =
     let vdev = Nvlist.v vdev in
     let props = Nvlist.v props in
@@ -134,7 +136,17 @@ module Zpool = struct
     C.Functions.Zpool.create handle pool vdev props fs_props
     |> Error.raise ~msg:"zpool.create" handle
 
-  let open_ = C.Functions.Zpool.open_
+  let exists h p =
+    let ptr = C.Functions.Zpool.open_canfail h p in
+    if not (Ctypes.is_null ptr) then true
+    else
+      try
+        Error.raise ~msg:"zpool.exists" h 127;
+        false
+      with
+      | Error.Zfs_error (Error.Exists, _) -> true
+      | Error.Zfs_error (Error.Noent, _) -> false
+
   let close = C.Functions.Zpool.close
   let get_name = C.Functions.Zpool.get_name
 end

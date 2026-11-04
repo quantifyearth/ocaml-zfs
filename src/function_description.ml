@@ -29,6 +29,10 @@ module Functions (F : Ctypes.FOREIGN) = struct
       foreign "zpool_open"
         (Types.libzfs_handle_t @-> string @-> returning Types.zpool_handle_t)
 
+    let open_canfail =
+      foreign "zpool_open_canfail"
+        (Types.libzfs_handle_t @-> string @-> returning Types.zpool_handle_t)
+
     let close = foreign "zpool_close" (Types.zpool_handle_t @-> returning void)
 
     let get_name =
