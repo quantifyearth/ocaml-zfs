@@ -50,14 +50,6 @@ let init : unit -> Handle.t = C.Functions.init
 let debug : Handle.t -> bool -> unit = C.Functions.debug
 let errno : Handle.t -> int = C.Functions.errno
 
-module Zpool = struct
-  type t = C.Types.zpool_handle_t Ctypes_static.structure Ctypes_static.ptr
-
-  let open_ = C.Functions.Zpool.open_
-  let close = C.Functions.Zpool.close
-  let get_name = C.Functions.Zpool.get_name
-end
-
 module Nvlist = struct
   type t = C.Types.nvlist_t Ctypes_static.structure Ctypes_static.ptr
 
@@ -66,7 +58,9 @@ module Nvlist = struct
     * [ `Bool of bool
       | `String of string
       | `Byte of Unsigned.uchar
-      | `Int64 of int64 ])
+      | `UInt64 of int64
+      | `Nvlist of nvlist
+      | `Nvlists of nvlist list ])
     list
 
   let check_return i =
@@ -75,31 +69,74 @@ module Nvlist = struct
   let v (schema : nvlist) : t =
     let open Ctypes in
     let finalise v = C.Functions.Nvlist.free !@v in
-    let nv_pp =
-      allocate ~finalise (ptr C.Types.nvlist_t)
-        (from_voidp C.Types.nvlist_t null)
+    let fresh_nv () =
+      let n =
+        allocate ~finalise (ptr C.Types.nvlist_t)
+          (from_voidp C.Types.nvlist_t null)
+      in
+      (* TODO: Unique names or not... *)
+      C.Functions.Nvlist.alloc n 0x1 0 |> check_return;
+      n
     in
-    (* TODO: Unique names or not... *)
-    C.Functions.Nvlist.alloc nv_pp 0x1 0 |> check_return;
-    let rec aux = function
-      | [] -> !@nv_pp
+    let alloc_array nv_ptrs =
+      let count = List.length nv_ptrs in
+      let arr = allocate_n ~finalise ~count (ptr C.Types.nvlist_t) in
+      List.iteri (fun i p -> arr +@ i <-@ p) nv_ptrs;
+      arr
+    in
+    let rec aux nvlist_ptr = function
+      | [] -> !@nvlist_ptr
       | (k, `Bool b) :: rest ->
-          C.Functions.Nvlist.add_bool !@nv_pp k b |> check_return;
-          aux rest
+          C.Functions.Nvlist.add_bool !@nvlist_ptr k b |> check_return;
+          aux nvlist_ptr rest
       | (k, `String s) :: rest ->
-          C.Functions.Nvlist.add_string !@nv_pp k s |> check_return;
-          aux rest
-      | (k, `Int64 i64) :: rest ->
-          C.Functions.Nvlist.add_int64 !@nv_pp k i64 |> check_return;
-          aux rest
+          C.Functions.Nvlist.add_string !@nvlist_ptr k s |> check_return;
+          aux nvlist_ptr rest
+      | (k, `UInt64 i64) :: rest ->
+          let u = Unsigned.UInt64.of_int64 i64 in
+          C.Functions.Nvlist.add_int64 !@nvlist_ptr k u |> check_return;
+          aux nvlist_ptr rest
       | (k, `Byte u) :: rest ->
-          C.Functions.Nvlist.add_byte !@nv_pp k u |> check_return;
-          aux rest
-      | _ -> assert false
+          C.Functions.Nvlist.add_byte !@nvlist_ptr k u |> check_return;
+          aux nvlist_ptr rest
+      | (k, `Nvlist nv) :: rest ->
+          let inner_nv_ptr = fresh_nv () in
+          let inner_nv_ptr = aux inner_nv_ptr nv in
+          C.Functions.Nvlist.add_nvlist !@nvlist_ptr k inner_nv_ptr
+          |> check_return;
+          aux nvlist_ptr rest
+      | (k, `Nvlists nvs) :: rest ->
+          let nv_ptrs =
+            List.map
+              (fun nv ->
+                let inner_nv_ptr = fresh_nv () in
+                let inner_nv_ptr = aux inner_nv_ptr nv in
+                inner_nv_ptr)
+              nvs
+          in
+          let arr = alloc_array nv_ptrs in
+          C.Functions.Nvlist.add_nvlists !@nvlist_ptr k arr (List.length nvs)
+          |> check_return;
+          aux nvlist_ptr rest
     in
-    aux schema
+    aux (fresh_nv ()) schema
 
   let empty = Ctypes.(coerce (ptr void) (ptr C.Types.nvlist_t) null)
+end
+
+module Zpool = struct
+  type t = C.Types.zpool_handle_t Ctypes_static.structure Ctypes_static.ptr
+
+  let create ?(vdev = []) ?(props = []) ?(fs_props = []) handle pool =
+    let vdev = Nvlist.v vdev in
+    let props = Nvlist.v props in
+    let fs_props = Nvlist.v fs_props in
+    C.Functions.Zpool.create handle pool vdev props fs_props
+    |> Error.raise ~msg:"zpool.create" handle
+
+  let open_ = C.Functions.Zpool.open_
+  let close = C.Functions.Zpool.close
+  let get_name = C.Functions.Zpool.get_name
 end
 
 type t = C.Types.zfs_handle_t Ctypes_static.structure Ctypes_static.ptr

@@ -31,20 +31,6 @@ val debug : Handle.t -> bool -> unit
 val errno : Handle.t -> int
 (** Check for errors on the handle *)
 
-module Zpool : sig
-  type t
-  (** A Zpool handle *)
-
-  val open_ : Handle.t -> string -> t
-  (** Open a Zpool *)
-
-  val close : t -> unit
-  (** Close an open Zpool *)
-
-  val get_name : t -> string
-  (** The name of an open Zpool *)
-end
-
 module Nvlist : sig
   type t
   (** Generic name-value lists used by ZFS *)
@@ -54,12 +40,38 @@ module Nvlist : sig
     * [ `Bool of bool
       | `Byte of Unsigned.uchar
       | `String of string
-      | `Int64 of int64 ])
+      | `UInt64 of int64
+      | `Nvlist of nvlist
+      | `Nvlists of nvlist list ])
     list
   (** A partial OCaml representation of an NV list *)
 
   val v : nvlist -> t
   (** Convert the OCaml representation to the C representation *)
+end
+
+module Zpool : sig
+  type t
+  (** A Zpool handle *)
+
+  val create :
+    ?vdev:Nvlist.nvlist ->
+    ?props:Nvlist.nvlist ->
+    ?fs_props:Nvlist.nvlist ->
+    Handle.t ->
+    string ->
+    unit
+  (** [create ?vdev ?props ?fs_props handle pool_name] will try to create a new
+      pool called [pool_name]. *)
+
+  val open_ : Handle.t -> string -> t
+  (** Open a Zpool *)
+
+  val close : t -> unit
+  (** Close an open Zpool *)
+
+  val get_name : t -> string
+  (** The name of an open Zpool *)
 end
 
 type t

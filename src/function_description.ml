@@ -20,6 +20,11 @@ module Functions (F : Ctypes.FOREIGN) = struct
       (Types.libzfs_handle_t @-> bool @-> returning void)
 
   module Zpool = struct
+    let create =
+      foreign "zpool_create"
+        (Types.libzfs_handle_t @-> string @-> ptr Types.nvlist_t
+       @-> ptr Types.nvlist_t @-> ptr Types.nvlist_t @-> returning int)
+
     let open_ =
       foreign "zpool_open"
         (Types.libzfs_handle_t @-> string @-> returning Types.zpool_handle_t)
@@ -83,8 +88,18 @@ module Functions (F : Ctypes.FOREIGN) = struct
         (ptr Types.nvlist_t @-> string @-> uchar @-> returning int)
 
     let add_int64 =
-      foreign "nvlist_add_int64"
-        (ptr Types.nvlist_t @-> string @-> int64_t @-> returning int)
+      foreign "nvlist_add_uint64"
+        (ptr Types.nvlist_t @-> string @-> uint64_t @-> returning int)
+
+    let add_nvlist =
+      foreign "nvlist_add_nvlist"
+        (ptr Types.nvlist_t @-> string @-> ptr Types.nvlist_t @-> returning int)
+
+    let add_nvlists =
+      foreign "nvlist_add_nvlist_array"
+        (ptr Types.nvlist_t @-> string
+        @-> ptr (const (ptr (const Types.nvlist_t)))
+        @-> int @-> returning int)
   end
 
   let clone =
