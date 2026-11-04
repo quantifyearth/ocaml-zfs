@@ -80,7 +80,7 @@ module Nvlist = struct
     in
     let alloc_array nv_ptrs =
       let count = List.length nv_ptrs in
-      let arr = allocate_n ~finalise ~count (ptr C.Types.nvlist_t) in
+      let arr = allocate_n ~count (ptr C.Types.nvlist_t) in
       List.iteri (fun i p -> arr +@ i <-@ p) nv_ptrs;
       arr
     in
