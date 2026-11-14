@@ -3,6 +3,12 @@ module Error = struct
 
   exception Zfs_error of (kind * string)
 
+  let raise' ?(msg = "") handle =
+    let err_msg = C.Functions.err_description handle in
+    let msg = if err_msg = "" then msg else err_msg in
+    let n = C.Functions.errno handle in
+    raise (Zfs_error (kind_of_int n, msg))
+
   let raise ?(msg = "") handle res =
     if res = 0 then ()
     else
@@ -127,7 +133,9 @@ end
 module Zpool = struct
   type t = C.Types.zpool_handle_t Ctypes_static.structure Ctypes_static.ptr
 
-  let open_ = C.Functions.Zpool.open_
+  let open_ h p =
+    let ptr = C.Functions.Zpool.open_canfail h p in
+    if not (Ctypes.is_null ptr) then ptr else Error.raise' ~msg:"zpool.open_" h
 
   let create ?(vdev = []) ?(props = []) ?(fs_props = []) handle pool =
     let vdev = Nvlist.v vdev in
